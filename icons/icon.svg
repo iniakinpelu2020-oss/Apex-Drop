@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Apex Drop">
+  <rect width="512" height="512" rx="112" fill="#0b0d10"/>
+  <path d="M256 96c46 62 92 118 92 176 0 51-41 92-92 92s-92-41-92-92c0-58 46-114 92-176z" fill="#5eead4"/>
+  <path d="M256 232c18 26 34 48 34 70 0 19-15 34-34 34s-34-15-34-34c0-22 16-44 34-70z" fill="#0b0d10"/>
+</svg>

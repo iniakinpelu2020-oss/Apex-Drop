@@ -1,0 +1,11 @@
+rules_version = '2';
+// Paste into Firebase console -> Firestore -> Rules, then Publish.
+// Drops are ciphertext only: the room passphrase never reaches the database,
+// so anyone who reads a document still cannot read what was dropped.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /drops/{room} {
+      allow read, write: if request.time < timestamp.date(2028, 1, 1);
+    }
+  }
+}

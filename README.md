@@ -1,40 +1,50 @@
 # Apex Drop
 
-Send a link, a snippet of text or a file from one of your devices to another, instantly.
+Send a link, a snippet of text or a small file from one of your devices to another.
 
-**Status: not built.**
+**Status: step 1 is built.** This repo is now the web page the plan asked for first: two
+browsers with the same room code and passphrase share text and small files in a live list.
 
-## What it should do
+## What works
 
-- Copy on the phone → paste on the laptop.
-- Drop a file on the laptop → it appears on the phone.
-- No account sharing, no third party reading it in transit.
+- **Room code + passphrase.** Both are combined with PBKDF2-SHA256 (100 000 iterations) into
+  an AES-GCM-256 key. Encryption happens in the browser before anything is sent, so the
+  database only ever holds ciphertext. The passphrase is never transmitted.
+- **Text drops** with Copy, and **file drops** up to 600 KB with Download.
+- **Live list**, newest first, kept to the last 40 drops and cleared after 24 hours.
+- **Same-browser tabs** sync instantly over BroadcastChannel, even if the network is down.
+- **Cross-device sync** through Firestore REST every 2.5 seconds (no SDK, no build step).
+- Installable PWA with an offline shell.
 
-## The constraint that shapes it
+## Run it
 
-Realtime needs a socket, and the free options are limited:
+It is plain static files. Any static host works:
 
-- **Firebase Realtime Database:** 1 GB stored, 100 simultaneous connections. Plenty for
-  your own devices.
-- **Supabase Realtime:** 200 connections, 2 million messages a month, but the project
-  pauses after a week of quiet — which is exactly what a drop service does when you are
-  not using it.
+```sh
+python3 -m http.server 8080
+```
 
-Firebase is the better fit: it does not pause.
+Open the page on both devices, type the same room code and passphrase, press **Connect**.
 
-## The part that is actually hard
+## One-time setup: Firestore rules
 
-Android does not let a background app watch the system clipboard, and it should not.
-Realistic options are a share-sheet target (you press Share → Apex Drop) or a small
-foreground service with a notification. Files also need somewhere to sit: a short-lived
-object in the B2 bucket, deleted after collection.
+Writes to the `drops` collection need permission. In the Firebase console for
+`apexaiautomation` → Firestore → Rules, add the block from [`firestore.rules`](firestore.rules)
+and publish. Until you do, the page says the database refused the write.
 
-## What you need to do
+## Limits worth knowing
 
-1. Nothing new if you already made the Firebase project for `Apex-Auth`.
+- **600 KB per file** because a Firestore document caps at 1 MiB and base64 inflates by a third.
+- **Polling, not a socket.** 2.5 seconds is effectively instant for moving a link; it is not
+  a realtime database. The README's Firebase Realtime Database route is still the upgrade if
+  you want true push, and it would remove the polling interval.
+- **No account.** The room code is the only address. Anyone who guesses both the room code and
+  the passphrase can read the room, so use a passphrase you do not reuse.
+- **Files are not copied to B2.** They live in the encrypted room document until they age out.
+  The one-time-link-plus-delete flow from the plan is not built.
 
-## First three steps
+## Next steps, in order
 
-1. A web page that shows a text box and a live list, so two browsers share clipboard text.
-2. A share target in the Android app that posts to the same place.
-3. File drops: upload to B2, hand out a one-time link, delete on collection.
+1. Swap polling for Firebase Realtime Database so drops appear without the delay.
+2. Android share-sheet target that posts into the same room document.
+3. File drops over B2 with a one-time link and deletion on collection.
